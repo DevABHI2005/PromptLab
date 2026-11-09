@@ -1,32 +1,66 @@
-# PromptLab 🚀
+# 🚀 PromptLab
 
-An AI-powered Prompt Engineering Workspace
-built using Python, Streamlit and Gemini API.
+An AI-powered Prompt Engineering Workspace.
 
-## 🎯 Project Objective
+## 🎯 Objective
 
-PromptLab helps users create, improve, test,
-and evaluate AI prompts for real-world tasks.
+Create, improve, test and evaluate AI prompts
+for real-world business and productivity tasks.
 
-## ✨ Planned Features
+## ✨ Features
 
-- Prompt creation and optimization
+- Structured prompt generation
 - Reusable prompt templates
+- Gemini API integration
 - AI-powered prompt execution
-- Response comparison
-- Prompt evaluation and scoring
-- Prompt history
+- Downloadable prompts
+- Business analysis use cases
 
-## 🛠️ Tech Stack
+## 🛠️ Technology Stack
 
 - Python
 - Streamlit
 - Google Gemini API
-- Git and GitHub
+- GitHub
+
+## 📂 Project Structure
+
+- app.py - Main application
+- prompts/ - Prompt templates
+- utils/ - Helper functions
+- requirements.txt - Dependencies
+- .env.example - Environment template
+
+## ⚙️ Installation
+
+Clone the repository:
+
+    git clone YOUR_GITHUB_REPOSITORY_URL
+
+Enter the project directory:
+
+    cd PromptLab
+
+Install dependencies:
+
+    pip install -r requirements.txt
+
+Create a .env file and configure:
+
+    GEMINI_API_KEY=your_api_key
+    GEMINI_MODEL=gemini-2.5-flash
+
+Run the application:
+
+    streamlit run app.py
+
+## 🔐 Security
+
+Never commit API keys or .env files.
 
 ## 📌 Project Status
 
-Day 1 - Initial Setup
+Version 1.0 - Initial development
 
 ## 👨‍💻 Author
 
