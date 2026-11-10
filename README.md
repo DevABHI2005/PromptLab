@@ -62,6 +62,17 @@ Never commit API keys or .env files.
 
 Version 1.0 - Initial development
 
+## ✨ Features
+
+- Structured Prompt Builder
+- AI-powered Prompt Optimizer
+- Prompt Quality Evaluator
+- Five-dimensional prompt scoring
+- Original vs optimized prompt comparison
+- Downloadable prompts and evaluation reports
+- Gemini API integration
+- Streamlit user interface
+
 ## 👨‍💻 Author
 
 Abhiram
