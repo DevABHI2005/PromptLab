@@ -1,12 +1,13 @@
 
-import os
 import streamlit as st
-from dotenv import load_dotenv
-from google import genai
+
+from utils.ai_providers import (
+    generate_gemini_response,
+    generate_groq_response
+)
 
 from utils.prompt_templates import build_prompt
 
-load_dotenv()
 
 st.set_page_config(
     page_title="PromptLab",
@@ -14,27 +15,9 @@ st.set_page_config(
     layout="wide"
 )
 
+
 st.title("🚀 PromptLab")
 st.caption("Your AI-powered Prompt Engineering Workspace")
-
-api_key = os.getenv("GEMINI_API_KEY")
-model = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
-
-def generate_response(prompt):
-    if not api_key:
-        raise ValueError("Gemini API key is missing. Configure your local .env file.")
-
-    client = genai.Client(api_key=api_key)
-
-    response = client.models.generate_content(
-        model=model,
-        contents=prompt
-    )
-
-    if not response.text:
-        raise ValueError("Gemini returned an empty response.")
-
-    return response.text
 
 
 def optimize_prompt(original_prompt, objective, context):
@@ -73,7 +56,7 @@ Explain the important changes.
 ### Why It Is Better
 Explain how the improvements help.
 """
-    return generate_response(instruction)
+    return generate_gemini_response(instruction)
 
 
 def evaluate_prompt(prompt, objective):
@@ -120,15 +103,24 @@ Explain whether the prompt is ready to use.
 
 Be objective. Do not give high scores without justification.
 """
-    return generate_response(instruction)
+    return generate_gemini_response(instruction)
 
 
-builder_tab, optimizer_tab, evaluator_tab = st.tabs([
+# --------------------------------------------------
+# TABS
+# --------------------------------------------------
+
+builder_tab, optimizer_tab, evaluator_tab, comparison_tab = st.tabs([
     "📝 Prompt Builder",
     "✨ Prompt Optimizer",
-    "📊 Prompt Evaluator"
+    "📊 Prompt Evaluator",
+    "⚖️ Model Comparison"
 ])
 
+
+# --------------------------------------------------
+# 1. PROMPT BUILDER
+# --------------------------------------------------
 
 with builder_tab:
 
@@ -136,17 +128,20 @@ with builder_tab:
 
     role = st.text_input(
         "AI Role",
-        "Act as a senior business data analyst"
+        "Act as a senior business data analyst",
+        key="builder_role"
     )
 
     context = st.text_area(
         "Context",
-        placeholder="Describe your business scenario..."
+        placeholder="Describe your business scenario...",
+        key="builder_context"
     )
 
     task = st.text_area(
         "Task",
-        placeholder="What should the AI accomplish?"
+        placeholder="What should the AI accomplish?",
+        key="builder_task"
     )
 
     output_format = st.selectbox(
@@ -158,7 +153,8 @@ with builder_tab:
             "Executive summary",
             "Step-by-step explanation",
             "JSON"
-        ]
+        ],
+        key="builder_format"
     )
 
     if st.button("Generate Prompt", key="builder_button"):
@@ -196,7 +192,8 @@ with builder_tab:
 
             try:
                 with st.spinner("Gemini is generating a response..."):
-                    result = generate_response(
+
+                    result = generate_gemini_response(
                         st.session_state["generated_prompt"]
                     )
 
@@ -206,9 +203,15 @@ with builder_tab:
                 st.error(f"API request failed: {error}")
 
         if "builder_response" in st.session_state:
+
             st.subheader("AI Response")
+
             st.write(st.session_state["builder_response"])
 
+
+# --------------------------------------------------
+# 2. PROMPT OPTIMIZER
+# --------------------------------------------------
 
 with optimizer_tab:
 
@@ -221,25 +224,32 @@ with optimizer_tab:
     original_prompt = st.text_area(
         "Original Prompt",
         placeholder="Example: Analyze my sales data.",
-        height=150
+        height=150,
+        key="optimizer_original"
     )
 
     objective = st.text_input(
         "What do you want to achieve?",
-        placeholder="Example: Identify sales trends and business opportunities."
+        placeholder="Example: Identify sales trends and business opportunities.",
+        key="optimizer_objective"
     )
 
     additional_context = st.text_area(
         "Additional Context (Optional)",
-        placeholder="Provide relevant background information..."
+        placeholder="Provide relevant background information...",
+        key="optimizer_context"
     )
 
     if st.button("Optimize My Prompt", type="primary"):
 
         if not original_prompt.strip() or not objective.strip():
-            st.warning("Please enter an original prompt and objective.")
+
+            st.warning(
+                "Please enter an original prompt and objective."
+            )
 
         else:
+
             try:
                 with st.spinner("Optimizing your prompt..."):
 
@@ -253,6 +263,7 @@ with optimizer_tab:
                 st.session_state["original_prompt"] = original_prompt
 
             except Exception as error:
+
                 st.error(f"Optimization failed: {error}")
 
     if "optimized_result" in st.session_state:
@@ -264,11 +275,15 @@ with optimizer_tab:
         left, right = st.columns(2)
 
         with left:
+
             st.markdown("**Original Prompt**")
+
             st.info(st.session_state["original_prompt"])
 
         with right:
+
             st.markdown("**AI Optimized Result**")
+
             st.success("Improved prompt generated")
 
         st.markdown(st.session_state["optimized_result"])
@@ -281,6 +296,10 @@ with optimizer_tab:
         )
 
 
+# --------------------------------------------------
+# 3. PROMPT EVALUATOR
+# --------------------------------------------------
+
 with evaluator_tab:
 
     st.header("📊 Prompt Quality Evaluator")
@@ -292,20 +311,26 @@ with evaluator_tab:
     evaluation_prompt = st.text_area(
         "Enter Prompt to Evaluate",
         placeholder="Paste your prompt here...",
-        height=180
+        height=180,
+        key="evaluation_prompt"
     )
 
     evaluation_objective = st.text_input(
         "Intended Objective",
-        placeholder="What should this prompt accomplish?"
+        placeholder="What should this prompt accomplish?",
+        key="evaluation_objective"
     )
 
     if st.button("Evaluate Prompt", type="primary"):
 
         if not evaluation_prompt.strip() or not evaluation_objective.strip():
-            st.warning("Please enter a prompt and its intended objective.")
+
+            st.warning(
+                "Please enter a prompt and its intended objective."
+            )
 
         else:
+
             try:
                 with st.spinner("Evaluating prompt quality..."):
 
@@ -317,11 +342,13 @@ with evaluator_tab:
                 st.session_state["evaluation_result"] = result
 
             except Exception as error:
+
                 st.error(f"Evaluation failed: {error}")
 
     if "evaluation_result" in st.session_state:
 
         st.divider()
+
         st.subheader("Evaluation Report")
 
         st.markdown(st.session_state["evaluation_result"])
@@ -334,8 +361,140 @@ with evaluator_tab:
         )
 
 
+# --------------------------------------------------
+# 4. MULTI-MODEL AI COMPARISON
+# --------------------------------------------------
+
+with comparison_tab:
+
+    st.header("⚖️ Multi-Model AI Comparison")
+
+    st.write(
+        "Compare responses from Gemini and Groq using the same prompt."
+    )
+
+    comparison_prompt = st.text_area(
+        "Enter Your Prompt",
+        placeholder="Example: Explain how AI is transforming e-commerce.",
+        height=160,
+        key="comparison_prompt"
+    )
+
+    compare_button = st.button(
+        "Compare AI Responses",
+        type="primary",
+        key="compare_button"
+    )
+
+    if compare_button:
+
+        if not comparison_prompt.strip():
+
+            st.warning("Please enter a prompt before comparing.")
+
+        else:
+
+            gemini_response = None
+            groq_response = None
+
+            with st.spinner("Generating responses from both AI models..."):
+
+                try:
+
+                    gemini_response = generate_gemini_response(
+                        comparison_prompt
+                    )
+
+                except Exception as error:
+
+                    st.error(f"Gemini Error: {error}")
+
+                try:
+
+                    groq_response = generate_groq_response(
+                        comparison_prompt
+                    )
+
+                except Exception as error:
+
+                    st.error(f"Groq Error: {error}")
+
+            st.session_state["comparison_gemini"] = gemini_response
+            st.session_state["comparison_groq"] = groq_response
+
+            st.session_state["comparison_original_prompt"] = comparison_prompt
+
+    if (
+        "comparison_gemini" in st.session_state
+        or "comparison_groq" in st.session_state
+    ):
+
+        st.divider()
+
+        st.subheader("AI Model Responses")
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+
+            st.markdown("### 🌐 Gemini")
+
+            gemini_result = st.session_state.get(
+                "comparison_gemini"
+            )
+
+            if gemini_result:
+
+                st.markdown(gemini_result)
+
+                st.download_button(
+                    "Download Gemini Response",
+                    data=gemini_result,
+                    file_name="gemini_response.txt",
+                    key="download_gemini"
+                )
+
+            else:
+
+                st.warning("Gemini response is unavailable.")
+
+        with col2:
+
+            st.markdown("### ⚡ Groq")
+
+            groq_result = st.session_state.get(
+                "comparison_groq"
+            )
+
+            if groq_result:
+
+                st.markdown(groq_result)
+
+                st.download_button(
+                    "Download Groq Response",
+                    data=groq_result,
+                    file_name="groq_response.txt",
+                    key="download_groq"
+                )
+
+            else:
+
+                st.warning("Groq response is unavailable.")
+
+        if gemini_result and groq_result:
+
+            st.success(
+                "Both AI models generated responses successfully. "
+                "Compare their accuracy, clarity, completeness and usefulness."
+            )
+
+
+# --------------------------------------------------
+# FOOTER
+# --------------------------------------------------
+
 st.divider()
 
 st.caption(
-    "PromptLab v1.1 | Python · Streamlit · Gemini API"
+    "PromptLab v1.2 | Python · Streamlit · Gemini API · Groq API"
 )
