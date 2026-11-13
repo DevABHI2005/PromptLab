@@ -1,10 +1,20 @@
-
+import json
 import streamlit as st
 
 from utils.ai_providers import (
     generate_gemini_response,
     generate_groq_response
 )
+
+from utils.database import (
+    initialize_database,
+    save_prompt,
+    get_all_prompts,
+    search_prompts,
+    delete_prompt
+)
+
+initialize_database()
 
 from utils.prompt_templates import build_prompt
 
@@ -106,15 +116,46 @@ Be objective. Do not give high scores without justification.
     return generate_gemini_response(instruction)
 
 
+def generate_json_response(task, data):
+    import json
+
+    instruction = f"""
+You are an expert data processing assistant.
+
+TASK:
+{task}
+
+INPUT DATA:
+{data}
+
+Return valid JSON only.
+
+Requirements:
+1. Use meaningful JSON keys.
+2. Use correct data types.
+3. Do not include Markdown formatting.
+4. Do not invent missing information.
+5. Use null for unavailable information.
+"""
+
+    response = generate_gemini_response(instruction)
+
+    try:
+        return json.loads(response)
+    except json.JSONDecodeError:
+        raise ValueError("AI did not return valid JSON.")
 # --------------------------------------------------
 # TABS
 # --------------------------------------------------
 
-builder_tab, optimizer_tab, evaluator_tab, comparison_tab = st.tabs([
+builder_tab, optimizer_tab, evaluator_tab, comparison_tab, history_tab, library_tab, json_tab = st.tabs([
     "📝 Prompt Builder",
     "✨ Prompt Optimizer",
     "📊 Prompt Evaluator",
-    "⚖️ Model Comparison"
+    "⚖️ Model Comparison",
+    "🕘 Prompt History",
+    "📚 Prompt Library",
+    "🔧 JSON Generator"
 ])
 
 
@@ -172,6 +213,15 @@ with builder_tab:
 
             st.session_state["generated_prompt"] = prompt
 
+            save_prompt(
+    "Generated Prompt",
+    prompt,
+    "General",
+    "History"
+)
+
+    st.success("Prompt saved to history!")
+
     if "generated_prompt" in st.session_state:
 
         st.subheader("Generated Prompt")
@@ -198,6 +248,13 @@ with builder_tab:
                     )
 
                 st.session_state["builder_response"] = result
+
+                save_prompt(
+    "Optimized Prompt",
+    result,
+    "General",
+    "History"
+)
 
             except Exception as error:
                 st.error(f"API request failed: {error}")
@@ -489,6 +546,228 @@ with comparison_tab:
             )
 
 
+
+# --------------------------------------------------
+# 5. PROMPT HISTORY
+# --------------------------------------------------
+
+with history_tab:
+
+    st.header("🕘 Prompt History")
+
+    keyword = st.text_input(
+        "Search prompt history",
+        key="history_search"
+    )
+
+    if keyword.strip():
+        prompts = search_prompts(keyword)
+        prompts = [p for p in prompts if p[4] == "History"]
+    else:
+        prompts = [
+            p for p in get_all_prompts()
+            if p[4] == "History"
+        ]
+
+    if prompts:
+
+        for prompt in prompts:
+
+            with st.expander(f"{prompt[1]} - {prompt[6]}"):
+
+                st.write(prompt[2])
+
+                st.caption(
+                    f"Category: {prompt[3]} | Type: {prompt[5]}"
+                )
+
+                st.download_button(
+                    "Download",
+                    data=prompt[2],
+                    file_name=f"prompt_{prompt[0]}.txt",
+                    key=f"history_download_{prompt[0]}"
+                )
+
+                if st.button(
+                    "Delete",
+                    key=f"history_delete_{prompt[0]}"
+                ):
+                    delete_prompt(prompt[0])
+                    st.rerun()
+
+    else:
+        st.info("No prompt history found.")
+
+
+
+# --------------------------------------------------
+# 6. PROMPT LIBRARY
+# --------------------------------------------------
+
+with library_tab:
+
+    st.header("📚 Reusable Prompt Library")
+
+    st.write("Save your favourite prompts and reuse them later.")
+
+    with st.form("save_library_prompt"):
+
+        title = st.text_input("Prompt Title")
+
+        category = st.selectbox(
+            "Category",
+            [
+                "Business",
+                "Data Analytics",
+                "Programming",
+                "Education",
+                "Content Writing",
+                "Other"
+            ]
+        )
+
+        prompt_text = st.text_area(
+            "Enter Prompt",
+            height=150
+        )
+
+        submitted = st.form_submit_button("Save to Library")
+
+        if submitted:
+
+            if title.strip() and prompt_text.strip():
+
+                save_prompt(
+                    title,
+                    prompt_text,
+                    category,
+                    "Library"
+                )
+
+                st.success("Prompt saved to your library!")
+                st.rerun()
+
+            else:
+                st.warning("Please enter both a title and a prompt.")
+
+    st.divider()
+
+    st.subheader("Your Saved Prompts")
+
+    library_search = st.text_input(
+        "Search your library",
+        key="library_search"
+    )
+
+    if library_search.strip():
+        saved_prompts = search_prompts(library_search)
+        saved_prompts = [
+            p for p in saved_prompts if p[4] == "Library"
+        ]
+    else:
+        saved_prompts = [
+            p for p in get_all_prompts()
+            if p[4] == "Library"
+        ]
+
+    if saved_prompts:
+
+        for prompt in saved_prompts:
+
+            with st.expander(prompt[1]):
+
+                st.caption(
+                    f"Category: {prompt[3]} | Saved: {prompt[6]}"
+                )
+
+                st.code(prompt[2], language="text")
+
+                st.download_button(
+                    "Download Prompt",
+                    data=prompt[2],
+                    file_name=f"library_prompt_{prompt[0]}.txt",
+                    key=f"library_download_{prompt[0]}"
+                )
+
+                if st.button(
+                    "Delete Prompt",
+                    key=f"library_delete_{prompt[0]}"
+                ):
+                    delete_prompt(prompt[0])
+                    st.rerun()
+
+    else:
+        st.info("Your prompt library is empty.")
+
+
+# --------------------------------------------------
+# 7. STRUCTURED JSON GENERATOR
+# --------------------------------------------------
+
+with json_tab:
+
+    st.header("🔧 Structured JSON Generator")
+
+    st.write(
+        "Convert instructions and information into structured JSON."
+    )
+
+    json_task = st.text_input(
+        "What should AI do?",
+        placeholder="Example: Analyze customer feedback"
+    )
+
+    json_data = st.text_area(
+        "Enter your data",
+        placeholder="Example: The product is excellent and delivery was fast.",
+        height=150
+    )
+
+    if st.button("Generate JSON", type="primary"):
+
+        if not json_task.strip() or not json_data.strip():
+
+            st.warning("Please enter both a task and input data.")
+
+        else:
+
+            try:
+
+                with st.spinner("Generating structured JSON..."):
+
+                    result = generate_json_response(
+                        json_task,
+                        json_data
+                    )
+
+                st.session_state["json_result"] = result
+
+            except Exception as error:
+
+                st.error(f"JSON generation failed: {error}")
+
+    if "json_result" in st.session_state:
+
+        st.subheader("Generated JSON")
+
+        st.json(st.session_state["json_result"])
+
+        json_string = json.dumps(
+            st.session_state["json_result"],
+            indent=4,
+            ensure_ascii=False
+        )
+
+        st.download_button(
+            "Download JSON",
+            data=json_string,
+            file_name="generated_data.json",
+            mime="application/json",
+            key="download_json"
+        )
+
+
+
 # --------------------------------------------------
 # FOOTER
 # --------------------------------------------------
@@ -498,3 +777,37 @@ st.divider()
 st.caption(
     "PromptLab v1.2 | Python · Streamlit · Gemini API · Groq API"
 )
+
+
+
+def generate_json_response(task, data):
+    instruction = f"""
+You are an expert data processing assistant.
+
+TASK:
+{task}
+
+INPUT DATA:
+{data}
+
+Return the result as valid JSON only.
+
+Requirements:
+1. Use meaningful JSON keys.
+2. Use correct data types.
+3. Do not include Markdown formatting.
+4. Do not include explanations outside JSON.
+5. Do not invent missing information.
+6. If information is unavailable, use null.
+
+Return valid JSON only.
+"""
+
+    response = generate_gemini_response(instruction)
+
+    try:
+        return json.loads(response)
+    except json.JSONDecodeError:
+        raise ValueError(
+            "AI did not return valid JSON. Please try again."
+        )
