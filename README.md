@@ -1,78 +1,83 @@
-# 🚀 PromptLab
+# 🚀 PromptLab – AI Prompt Engineering Workspace
 
-An AI-powered Prompt Engineering Workspace.
-
-## 🎯 Objective
-
-Create, improve, test and evaluate AI prompts
-for real-world business and productivity tasks.
+PromptLab is an AI-powered workspace designed to help users create, optimize, evaluate and manage prompts while comparing responses from different AI models.
 
 ## ✨ Features
 
-- Structured prompt generation
-- Reusable prompt templates
-- Gemini API integration
-- AI-powered prompt execution
-- Downloadable prompts
-- Business analysis use cases
+- **Prompt Builder:** Create structured prompts using roles, context, tasks and output formats.
+- **Prompt Optimizer:** Improve existing prompts using AI.
+- **Prompt Evaluator:** Evaluate prompt quality across five dimensions.
+- **Model Comparison:** Compare responses from Google Gemini and Groq.
+- **Prompt History:** Search, view and download saved prompts.
+- **Prompt Library:** Store and manage reusable prompts.
+- **JSON Generator:** Generate structured JSON from instructions and input data.
 
-## 🛠️ Technology Stack
+## 🛠️ Technologies Used
 
 - Python
 - Streamlit
 - Google Gemini API
-- GitHub
-
-## 📂 Project Structure
-
-- app.py - Main application
-- prompts/ - Prompt templates
-- utils/ - Helper functions
-- requirements.txt - Dependencies
-- .env.example - Environment template
+- Groq API
+- SQLite
+- Git and GitHub
 
 ## ⚙️ Installation
 
-Clone the repository:
+1. Clone the repository:
 
-    git clone YOUR_GITHUB_REPOSITORY_URL
+   `git clone YOUR_GITHUB_REPOSITORY_URL`
 
-Enter the project directory:
+2. Navigate into the project:
 
-    cd PromptLab
+   `cd PromptLab`
 
-Install dependencies:
+3. Create a virtual environment:
 
-    pip install -r requirements.txt
+   `python -m venv .venv`
 
-Create a .env file and configure:
+4. Activate it on Windows:
 
-    GEMINI_API_KEY=your_api_key
-    GEMINI_MODEL=gemini-2.5-flash
+   `.venv\Scripts\activate`
 
-Run the application:
+5. Install dependencies:
 
-    streamlit run app.py
+   `pip install -r requirements.txt`
+
+6. Create a `.env` file using `.env.example` as a reference.
+
+7. Add your API keys and required model settings to `.env`. Never publish API keys.
+
+8. Start the application:
+
+   `streamlit run app.py`
+
+## 📁 Project Structure
+
+```text
+PromptLab/
+├── app.py
+├── requirements.txt
+├── .env.example
+├── .gitignore
+├── assets/
+│   └── style.css
+├── utils/
+│   ├── ai_providers.py
+│   ├── database.py
+│   └── prompt_templates.py
+└── README.md
+```
 
 ## 🔐 Security
 
-Never commit API keys or .env files.
+- Store API keys in your local `.env` file.
+- Never commit `.env` or expose API credentials.
+- Use `.env.example` to document required environment variables without real secrets.
 
-## 📌 Project Status
+## 🎯 Project Goal
 
-Version 1.0 - Initial development
+To build a practical AI prompt engineering workspace that demonstrates prompt design, AI integration, model comparison, structured outputs and data persistence.
 
-## ✨ Features
+---
 
-- Structured Prompt Builder
-- AI-powered Prompt Optimizer
-- Prompt Quality Evaluator
-- Five-dimensional prompt scoring
-- Original vs optimized prompt comparison
-- Downloadable prompts and evaluation reports
-- Gemini API integration
-- Streamlit user interface
-
-## 👨‍💻 Author
-
-Abhiram
+**Built with Python, Streamlit, Gemini and Groq.**
